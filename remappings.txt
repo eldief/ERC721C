@@ -1,0 +1,4 @@
+forge-std/=lib/forge-std/src/
+
+@ERC721A/=lib/ERC721A/
+@solady/=lib/solady/src/
