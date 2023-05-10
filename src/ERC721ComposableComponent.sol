@@ -7,11 +7,32 @@ import "./common/ERC721Common.sol";
 /// @title ERC721ComposableComponent
 /// @author @eldief
 /// @notice Contract defining base functionalities for ERC721 Composable-Component
-/// @dev Abstract contract providing internal methods to expose via external aliases
-///      `Contract Configuration` and `Component Registry` expose custom data, customizable by implementations
-///      Custom `Token Configuration` layout:
-///      - [0..63]    `Seed`
-///      - [64..255]  `Custom data`
+/// @dev Layouts:
+///      - _components -> `Expansions Registry`
+///        - [0..159]   `Component address`
+///        - [160..255] `Custom data`
+///
+///      - _configuration -> `Contract Configuration`
+///        - [0..255]   `Custom data`
+///
+///      - _configurations -> `Token Configuration`
+///        - [0..63]    `Seed`
+///        - [64..71]   `Slot 0 component id`
+///        - [72..87]   `Slot 0 item id`
+///        - [88..65]   `Slot 1 component id`
+///        - [96..111]  `Slot 1 item id`
+///        - [112..119] `Slot 2 component id`
+///        - [120..135] `Slot 2 item id`
+///        - [136..143] `Slot 3 component id`
+///        - [144..159] `Slot 3 item id`
+///        - [160..167] `Slot 4 component id`
+///        - [168..183] `Slot 4 item id`
+///        - [184..191] `Slot 5 component id`
+///        - [192..207] `Slot 5 item id`
+///        - [208..215] `Slot 6 component id`
+///        - [216..231] `Slot 6 item id`
+///        - [232..239] `Slot 7 component id`
+///        - [240..255] `Slot 7 item id`
 abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC721Common {
     using Base64 for bytes;
     using LibString for uint256;

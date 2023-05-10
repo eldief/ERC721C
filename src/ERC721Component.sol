@@ -7,11 +7,13 @@ import "./common/ERC721Common.sol";
 /// @title ERC721Component
 /// @author @eldief
 /// @notice Contract defining base functionalities for ERC721 Component
-/// @dev Abstract contract providing internal methods to expose via external aliases
-///      `Contract Configuration` and `Component Registry` expose custom data, customizable by implementations
-///      Custom `Token Configuration` layout:
-///      - [0..63]    `Seed`
-///      - [64..255]  `Custom data`
+/// @dev Layouts:
+///      - _configuration -> `Contract Configuration
+///        - [0..255]   `Custom data`
+///
+///      - _configurations -> `Token Configuration`
+///        - [0..63]    `Seed`
+///        - [64..255]  `Custom data`
 abstract contract ERC721Component is IERC721Component, ERC721Common {
     using Base64 for bytes;
     using LibString for uint256;
