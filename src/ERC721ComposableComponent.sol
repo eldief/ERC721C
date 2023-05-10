@@ -8,7 +8,7 @@ import "./common/ERC721Common.sol";
 /// @author @eldief
 /// @notice Contract defining base functionalities for ERC721 Composable-Component
 /// @dev Layouts:
-///      - _components -> `Expansions Registry`
+///      - _components -> `Component Registry`
 ///        - [0..159]   `Component address`
 ///        - [160..255] `Custom data`
 ///
@@ -50,7 +50,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     bytes32 internal constant _BATCH_METADATA_UPDATE_SIGNATURE =
         0x6bd5c950a8d8df17f772f5af37cb3655737899cbf903264b9795592da439661c;
 
-    /// @notice `ExpansionSet` event
+    /// @notice `ComponentSet` event
     /// @dev `ComponentSet` event signature:
     ///      `keccak256(bytes("ComponentSet(uint256,uint256,uint8,uint16)"))`
     event ComponentSet(uint256 indexed tokenId, uint256 indexed slotId, uint8 componentId, uint16 itemId);
@@ -152,7 +152,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @return componentAddress address Unpacked `Component Address`
     function _getComponentAddress(uint256 componentId) internal view returns (address componentAddress) {
         assembly {
-            // component = _components[expansionId];
+            // component = _components[componentId];
             mstore(0, componentId)
             mstore(0x20, _components.slot)
             let component := sload(keccak256(0, 0x40))
@@ -187,7 +187,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
             let slotHash := keccak256(0, 0x40)
             let configuration := sload(slotHash)
 
-            // configuration.packUInt8(slot, expansionId);
+            // configuration.packUInt8(slot, componentId);
             configuration := and(configuration, not(shl(slot, 0xFF)))
             configuration := or(configuration, shl(slot, componentId))
 
