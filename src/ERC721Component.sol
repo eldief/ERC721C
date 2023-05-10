@@ -69,6 +69,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     function renderExternally(ComponentRenderRequest memory request)
         external
         view
+        existingToken(request.tokenId)
         returns (ComponentRenderResponse memory)
     {
         DynamicBufferLib.DynamicBuffer memory buffer1;

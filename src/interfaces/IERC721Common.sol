@@ -9,7 +9,7 @@ import "@solady/utils/LibString.sol";
 import "@solady/utils/DynamicBufferLib.sol";
 
 struct ComponentRenderRequest {
-    uint256 itemId;
+    uint256 tokenId;
     bytes data;
 }
 

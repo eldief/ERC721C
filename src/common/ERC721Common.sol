@@ -15,26 +15,6 @@ import "@ERC721A/contracts/ERC721A.sol";
 ///      Export `PackingLib` as utility
 abstract contract ERC721Common is IERC721Common, ERC721A, Ownable {
     /*
-        ┌─┐┬  ┬┌─┐┌┐┌┌┬┐┌─┐
-        ├┤ └┐┌┘├┤ │││ │ └─┐
-        └─┘ └┘ └─┘┘└┘ ┴ └─┘ */
-    /// @notice `IERC4906.BatchMetadataUpdate` event
-    /// @dev `IERC4906.BatchMetadataUpdate` event signature:
-    ///      `keccak256(bytes("BatchMetadataUpdate(uint256,uint256)"))`
-    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
-
-    bytes32 internal constant _BATCH_METADATA_UPDATE_SIGNATURE =
-        0x6bd5c950a8d8df17f772f5af37cb3655737899cbf903264b9795592da439661c;
-
-    /// @notice `IERC4906.MetadataUpdate` event
-    /// @dev `IERC4906.MetadataUpdate` event signature:
-    ///      `keccak256(bytes("MetadataUpdate(uint256)"))`
-    event MetadataUpdate(uint256 _tokenId);
-
-    bytes32 internal constant _METADATA_UPDATE_SIGNATURE =
-        0xf8e1a15aba9398e019f0b49df1a4fde98ee17ae345cb5f6b5e2c27f5033e8ce7;
-
-    /*
         ┌─┐┬─┐┬─┐┌─┐┬─┐┌─┐
         ├┤ ├┬┘├┬┘│ │├┬┘└─┐
         └─┘┴└─┴└─└─┘┴└─└─┘  */

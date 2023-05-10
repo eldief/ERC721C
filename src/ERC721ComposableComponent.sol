@@ -21,6 +21,14 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
         ┌─┐┬  ┬┌─┐┌┐┌┌┬┐┌─┐
         ├┤ └┐┌┘├┤ │││ │ └─┐
         └─┘ └┘ └─┘┘└┘ ┴ └─┘ */
+    /// @notice `IERC4906.BatchMetadataUpdate` event
+    /// @dev `IERC4906.BatchMetadataUpdate` event signature:
+    ///      `keccak256(bytes("BatchMetadataUpdate(uint256,uint256)"))`
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
+
+    bytes32 internal constant _BATCH_METADATA_UPDATE_SIGNATURE =
+        0x6bd5c950a8d8df17f772f5af37cb3655737899cbf903264b9795592da439661c;
+
     /// @notice `ExpansionSet` event
     /// @dev `ComponentSet` event signature:
     ///      `keccak256(bytes("ComponentSet(uint256,uint256,uint8,uint16)"))`
@@ -28,6 +36,14 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
 
     bytes32 internal constant _COMPONENT_SET_SIGNATURE =
         0xeec0cb6f63a7a03e6105cede2e7d90cb184e6ee94557e3c57d8535c67bd13c7b;
+
+    /// @notice `IERC4906.MetadataUpdate` event
+    /// @dev `IERC4906.MetadataUpdate` event signature:
+    ///      `keccak256(bytes("MetadataUpdate(uint256)"))`
+    event MetadataUpdate(uint256 _tokenId);
+
+    bytes32 internal constant _METADATA_UPDATE_SIGNATURE =
+        0xf8e1a15aba9398e019f0b49df1a4fde98ee17ae345cb5f6b5e2c27f5033e8ce7;
 
     /*
         ┌─┐┌┬┐┌─┐┬─┐┌─┐┌─┐┌─┐
@@ -311,6 +327,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     function renderExternally(ComponentRenderRequest memory request)
         external
         view
+        existingToken(request.tokenId)
         returns (ComponentRenderResponse memory)
     {
         DynamicBufferLib.DynamicBuffer memory buffer1;

@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 /// @title PackingLib
 /// @author @eldief
-/// @notice Library to pack / unpack
+/// @notice Helper to pack and unpack uint256
 library PackingLib {
     /// @dev Internal function that packs bool
     /// @param packed uint256 Packed configuration
