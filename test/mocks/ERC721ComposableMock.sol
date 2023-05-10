@@ -7,6 +7,35 @@ import "../../src/ERC721Composable.sol";
 contract ERC721ComposableMock is ERC721Composable {
     constructor(address owner_) ERC721Composable("ERC721Composable", "ERC721C", owner_) {}
 
+    // hooks
+    function _onRendering(uint256 itemId) internal view override returns (ComponentRenderRequest memory request) {}
+
+    function _onRender(
+        DynamicBufferLib.DynamicBuffer memory buffer1,
+        DynamicBufferLib.DynamicBuffer memory buffer2,
+        ComponentRenderRequest memory request
+    ) internal view override {}
+
+    function _onRendered(DynamicBufferLib.DynamicBuffer memory buffer1, DynamicBufferLib.DynamicBuffer memory buffer2)
+        internal
+        view
+        override
+    {}
+
+    function _onComponentRendering(uint256 itemId)
+        internal
+        view
+        override
+        returns (ComponentRenderRequest memory request)
+    {}
+
+    function _onComponentRendered(
+        DynamicBufferLib.DynamicBuffer memory buffer1,
+        DynamicBufferLib.DynamicBuffer memory buffer2,
+        ComponentRenderResponse memory response
+    ) internal view override {}
+
+    // mocks
     function __mint(address to, uint256 quantity) external payable {
         _mint(to, quantity);
     }
@@ -19,75 +48,75 @@ contract ERC721ComposableMock is ERC721Composable {
         _burn(tokenId);
     }
 
-    function __setExpansionSlot0(uint256 tokenId, uint8 expansionId, uint16 itemId) external {
-        _setExpansion(tokenId, _EXPANSION_SLOT_0, expansionId, itemId);
+    function __setComponentSlot0(uint256 tokenId, uint8 componentId, uint16 itemId) external {
+        _setComponent(tokenId, _COMPONENT_SLOT_0, componentId, itemId);
     }
 
-    function __getExpansionSlot0(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getExpansion(tokenId, _EXPANSION_SLOT_0);
+    function __getComponentSlot0(uint256 tokenId) external view returns (uint256, uint256) {
+        return _getComponent(tokenId, _COMPONENT_SLOT_0);
     }
 
-    function __setExpansionSlot1(uint256 tokenId, uint8 expansionId, uint16 itemId) external {
-        _setExpansion(tokenId, _EXPANSION_SLOT_1, expansionId, itemId);
+    function __setComponentSlot1(uint256 tokenId, uint8 componentId, uint16 itemId) external {
+        _setComponent(tokenId, _COMPONENT_SLOT_1, componentId, itemId);
     }
 
-    function __getExpansionSlot1(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getExpansion(tokenId, _EXPANSION_SLOT_1);
+    function __getComponentSlot1(uint256 tokenId) external view returns (uint256, uint256) {
+        return _getComponent(tokenId, _COMPONENT_SLOT_1);
     }
 
-    function __setExpansionSlot2(uint256 tokenId, uint8 expansionId, uint16 itemId) external {
-        _setExpansion(tokenId, _EXPANSION_SLOT_2, expansionId, itemId);
+    function __setComponentSlot2(uint256 tokenId, uint8 componentId, uint16 itemId) external {
+        _setComponent(tokenId, _COMPONENT_SLOT_2, componentId, itemId);
     }
 
-    function __getExpansionSlot2(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getExpansion(tokenId, _EXPANSION_SLOT_2);
+    function __getComponentSlot2(uint256 tokenId) external view returns (uint256, uint256) {
+        return _getComponent(tokenId, _COMPONENT_SLOT_2);
     }
 
-    function __setExpansionSlot3(uint256 tokenId, uint8 expansionId, uint16 itemId) external {
-        _setExpansion(tokenId, _EXPANSION_SLOT_3, expansionId, itemId);
+    function __setComponentSlot3(uint256 tokenId, uint8 componentId, uint16 itemId) external {
+        _setComponent(tokenId, _COMPONENT_SLOT_3, componentId, itemId);
     }
 
-    function __getExpansionSlot3(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getExpansion(tokenId, _EXPANSION_SLOT_3);
+    function __getComponentSlot3(uint256 tokenId) external view returns (uint256, uint256) {
+        return _getComponent(tokenId, _COMPONENT_SLOT_3);
     }
 
-    function __setExpansionSlot4(uint256 tokenId, uint8 expansionId, uint16 itemId) external {
-        _setExpansion(tokenId, _EXPANSION_SLOT_4, expansionId, itemId);
+    function __setComponentSlot4(uint256 tokenId, uint8 componentId, uint16 itemId) external {
+        _setComponent(tokenId, _COMPONENT_SLOT_4, componentId, itemId);
     }
 
-    function __getExpansionSlot4(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getExpansion(tokenId, _EXPANSION_SLOT_4);
+    function __getComponentSlot4(uint256 tokenId) external view returns (uint256, uint256) {
+        return _getComponent(tokenId, _COMPONENT_SLOT_4);
     }
 
-    function __setExpansionSlot5(uint256 tokenId, uint8 expansionId, uint16 itemId) external {
-        _setExpansion(tokenId, _EXPANSION_SLOT_5, expansionId, itemId);
+    function __setComponentSlot5(uint256 tokenId, uint8 componentId, uint16 itemId) external {
+        _setComponent(tokenId, _COMPONENT_SLOT_5, componentId, itemId);
     }
 
-    function __getExpansionSlot5(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getExpansion(tokenId, _EXPANSION_SLOT_5);
+    function __getComponentSlot5(uint256 tokenId) external view returns (uint256, uint256) {
+        return _getComponent(tokenId, _COMPONENT_SLOT_5);
     }
 
-    function __setExpansionSlot6(uint256 tokenId, uint8 expansionId, uint16 itemId) external {
-        _setExpansion(tokenId, _EXPANSION_SLOT_6, expansionId, itemId);
+    function __setComponentSlot6(uint256 tokenId, uint8 componentId, uint16 itemId) external {
+        _setComponent(tokenId, _COMPONENT_SLOT_6, componentId, itemId);
     }
 
-    function __getExpansionSlot6(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getExpansion(tokenId, _EXPANSION_SLOT_6);
+    function __getComponentSlot6(uint256 tokenId) external view returns (uint256, uint256) {
+        return _getComponent(tokenId, _COMPONENT_SLOT_6);
     }
 
-    function __setExpansionSlot7(uint256 tokenId, uint8 expansionId, uint16 itemId) external {
-        _setExpansion(tokenId, _EXPANSION_SLOT_7, expansionId, itemId);
+    function __setComponentSlot7(uint256 tokenId, uint8 componentId, uint16 itemId) external {
+        _setComponent(tokenId, _COMPONENT_SLOT_7, componentId, itemId);
     }
 
-    function __getExpansionSlot7(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getExpansion(tokenId, _EXPANSION_SLOT_7);
+    function __getComponentSlot7(uint256 tokenId) external view returns (uint256, uint256) {
+        return _getComponent(tokenId, _COMPONENT_SLOT_7);
     }
 
-    function __setExpansionAddress(uint8 expansionId, address expansionAddress) external {
-        _setExpansionAddress(expansionId, expansionAddress);
+    function __setComponentAddress(uint8 componentId, address componentAddress) external {
+        _setComponentAddress(componentId, componentAddress);
     }
 
-    function __getExpansionAddress(uint8 expansionId) external view returns (address) {
-        return _getExpansionAddress(expansionId);
+    function __getComponentAddress(uint8 componentId) external view returns (address) {
+        return _getComponentAddress(componentId);
     }
 }

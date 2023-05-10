@@ -1,34 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import "./interfaces/IERC721Component.sol";
-import "./interfaces/IERC721Composable.sol";
+import "./interfaces/IERC721ComposableComponent.sol";
 import "./common/ERC721Common.sol";
 
-/// @title ERC721Composable
+/// @title ERC721ComposableComponent
 /// @author @eldief
-/// @notice Contract defining base functionalities for ERC721 Composable
+/// @notice Contract defining base functionalities for ERC721 Composable-Component
 /// @dev Abstract contract providing internal methods to expose via external aliases
-///      `Contract Configuration` and `Components Registry` expose custom data, customizable by implementations
+///      `Contract Configuration` and `Component Registry` expose custom data, customizable by implementations
 ///      Custom `Token Configuration` layout:
 ///      - [0..63]    `Seed`
-///      - [64..71]   `Slot 0 component id`
-///      - [72..87]   `Slot 0 item id`
-///      - [88..65]   `Slot 1 component id`
-///      - [96..111]  `Slot 1 item id`
-///      - [112..119] `Slot 2 component id`
-///      - [120..135] `Slot 2 item id`
-///      - [136..143] `Slot 3 component id`
-///      - [144..159] `Slot 3 item id`
-///      - [160..167] `Slot 4 component id`
-///      - [168..183] `Slot 4 item id`
-///      - [184..191] `Slot 5 component id`
-///      - [192..207] `Slot 5 item id`
-///      - [208..215] `Slot 6 component id`
-///      - [216..231] `Slot 6 item id`
-///      - [232..239] `Slot 7 component id`
-///      - [240..255] `Slot 7 item id`
-abstract contract ERC721Composable is IERC721Composable, ERC721Common {
+///      - [64..255]  `Custom data`
+abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC721Common {
     using Base64 for bytes;
     using LibString for uint256;
     using DynamicBufferLib for DynamicBufferLib.DynamicBuffer;
@@ -241,7 +225,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
 
         ComponentRenderRequest memory request = _onRendering(tokenId);
         _onRender(buffer1, buffer2, request);
-        _onRendered(buffer1, buffer2);
+        _onRenderedInternal(buffer1, buffer2);
 
         DynamicBufferLib.DynamicBuffer memory tokenURIBuffer;
         tokenURIBuffer.append("data:application/json,{");
@@ -322,6 +306,24 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
         return response;
     }
 
+    /// @notice Component render function
+    /// @dev Entry point for `ERC721Composable._renderComponents`
+    ///      Has to be overridden by Component Implementation
+    /// @param request ComponentRenderRequest Component render request
+    /// @return response ComponentRenderResponse Component render response
+    function renderExternally(ComponentRenderRequest memory request)
+        external
+        view
+        returns (ComponentRenderResponse memory)
+    {
+        DynamicBufferLib.DynamicBuffer memory buffer1;
+        DynamicBufferLib.DynamicBuffer memory buffer2;
+
+        _onRender(buffer1, buffer2, request);
+
+        return _onRenderedExternal(buffer1, buffer2);
+    }
+
     /*
         ┬ ┬┌─┐┌─┐┬┌─┌─┐
         ├─┤│ ││ │├┴┐└─┐
@@ -345,15 +347,26 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
         ComponentRenderRequest memory request
     ) internal view virtual;
 
-    /// @notice On rendered hook
-    /// @dev Executed after rendering
+    /// @notice On rendered hook for internal calls
+    /// @dev Executed after rendering internally
     ///      Has to be overridden with custom behaviour writing to buffers
     /// @param buffer1 DynamicBufferLib.DynamicBuffer Buffer
     /// @param buffer2 DynamicBufferLib.DynamicBuffer Buffer
-    function _onRendered(DynamicBufferLib.DynamicBuffer memory buffer1, DynamicBufferLib.DynamicBuffer memory buffer2)
-        internal
-        view
-        virtual;
+    function _onRenderedInternal(
+        DynamicBufferLib.DynamicBuffer memory buffer1,
+        DynamicBufferLib.DynamicBuffer memory buffer2
+    ) internal view virtual;
+
+    /// @notice On rendered hook for external calls
+    /// @dev Executed after rendering externally
+    ///      Has to be overridden with custom behaviour for serializing `ComponentRenderResponse` and reading from buffers
+    /// @param buffer1 DynamicBufferLib.DynamicBuffer Buffer
+    /// @param buffer2 DynamicBufferLib.DynamicBuffer Buffer
+    /// @return response ComponentRenderResponse Component render response
+    function _onRenderedExternal(
+        DynamicBufferLib.DynamicBuffer memory buffer1,
+        DynamicBufferLib.DynamicBuffer memory buffer2
+    ) internal view virtual returns (ComponentRenderResponse memory response);
 
     /// @notice On component rendering hook
     /// @dev Executed before rendering a component
