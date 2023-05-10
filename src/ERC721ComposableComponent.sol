@@ -76,7 +76,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @notice Constructor
     /// @dev Initialize `ERC721A` with `name_` and `symbol_`
     ///      Initialize ownership via `Solady.Ownable`
-    constructor(string memory name_, string memory symbol_, address owner_) ERC721Common(name_, symbol_, owner_) {}
+    constructor(string memory name_, string memory symbol_) ERC721Common(name_, symbol_) {}
 
     /*
         ┌─┐┌─┐┌┬┐┌┬┐┌─┐┬─┐┌─┐
@@ -229,8 +229,8 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
 
         DynamicBufferLib.DynamicBuffer memory tokenURIBuffer;
         tokenURIBuffer.append("data:application/json,{");
-        tokenURIBuffer.append('"name":"', bytes(name()), " #", bytes(tokenId.toString()), '",');
-        tokenURIBuffer.append('"description":"', "", '",');
+        tokenURIBuffer.append('"name":"', bytes(name()), '",');
+        tokenURIBuffer.append('"description":"', bytes(description()), '",');
         tokenURIBuffer.append('"image":"data:image/svg+xml;base64,', bytes(buffer1.data.encode()), '",');
         tokenURIBuffer.append('"attributes":[', buffer2.data, "]}");
 
@@ -265,9 +265,12 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
                 address tokenOwner = ownerOf(tokenId);
                 address componentAddress = _getComponentAddress(componentId);
 
-                response = _renderComponent(tokenOwner, componentAddress, itemId, i);
-                if (response.data.length > 0) {
-                    _onComponentRendered(buffer1, buffer2, response);
+                if (componentAddress != address(0)) {
+                    response = _renderComponent(tokenOwner, componentAddress, itemId, i);
+
+                    if (response.data.length > 0) {
+                        _onComponentRendered(buffer1, buffer2, response);
+                    }
                 }
             }
         }
@@ -285,25 +288,19 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     function _renderComponent(address tokenOwner, address componentAddress, uint256 itemId, uint256 slotId)
         private
         view
-        returns (ComponentRenderResponse memory)
+        returns (ComponentRenderResponse memory response)
     {
-        ComponentRenderResponse memory response;
+        // Try-catch block: having no check on setting components could revert when `itemId` is invalid
+        try IERC721A(componentAddress).ownerOf(itemId) returns (address itemOwner) {
+            if (tokenOwner == itemOwner) {
+                ComponentRenderRequest memory request = _onComponentRendering(itemId);
+                ComponentRenderResponse memory _response = IERC721Component(componentAddress).renderExternally(request);
 
-        if (componentAddress != address(0)) {
-            // Try-catch block: having no check on setting components could revert when `itemId` is invalid
-            try IERC721A(componentAddress).ownerOf(itemId) returns (address itemOwner) {
-                if (tokenOwner == itemOwner) {
-                    ComponentRenderRequest memory request = _onComponentRendering(itemId);
-                    response = IERC721Component(componentAddress).renderExternally(request);
-
-                    if (slotId == response.slotId) {
-                        return response;
-                    }
+                if (slotId == response.slotId) {
+                    response = _response;
                 }
-            } catch { /* pass */ }
-        }
-
-        return response;
+            }
+        } catch { /* pass */ }
     }
 
     /// @notice Component render function
@@ -359,7 +356,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
 
     /// @notice On rendered hook for external calls
     /// @dev Executed after rendering externally
-    ///      Has to be overridden with custom behaviour for serializing `ComponentRenderResponse` and reading from buffers
+    ///      Has to be overridden with custom behaviour for serializing `ComponentRenderResponse`
     /// @param buffer1 DynamicBufferLib.DynamicBuffer Buffer
     /// @param buffer2 DynamicBufferLib.DynamicBuffer Buffer
     /// @return response ComponentRenderResponse Component render response

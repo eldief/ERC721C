@@ -92,7 +92,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @notice Constructor
     /// @dev Initialize `ERC721A` with `name_` and `symbol_`
     ///      Initialize ownership via `Solady.Ownable`
-    constructor(string memory name_, string memory symbol_, address owner_) ERC721Common(name_, symbol_, owner_) {}
+    constructor(string memory name_, string memory symbol_) ERC721Common(name_, symbol_) {}
 
     /*
         ┌─┐┌─┐┌┬┐┌┬┐┌─┐┬─┐┌─┐
@@ -141,10 +141,6 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
         }
     }
 
-    /*
-        ┌─┐┌─┐┌┬┐┌┬┐┌─┐┬─┐┌─┐
-        └─┐├┤  │  │ ├┤ ├┬┘└─┐
-        └─┘└─┘ ┴  ┴ └─┘┴└─└─┘   */
     /// @notice Set component data
     /// @dev Each component data is packed in a single word, see `PackingLib`
     ///      Delegates verification gas usage to `tokenURI` view function
@@ -245,8 +241,8 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
 
         DynamicBufferLib.DynamicBuffer memory tokenURIBuffer;
         tokenURIBuffer.append("data:application/json,{");
-        tokenURIBuffer.append('"name":"', bytes(name()), " #", bytes(tokenId.toString()), '",');
-        tokenURIBuffer.append('"description":"', "", '",');
+        tokenURIBuffer.append('"name":"', bytes(name()), '",');
+        tokenURIBuffer.append('"description":"', bytes(description()), '",');
         tokenURIBuffer.append('"image":"data:image/svg+xml;base64,', bytes(buffer1.data.encode()), '",');
         tokenURIBuffer.append('"attributes":[', buffer2.data, "]}");
 
@@ -281,9 +277,12 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
                 address tokenOwner = ownerOf(tokenId);
                 address componentAddress = _getComponentAddress(componentId);
 
-                response = _renderComponent(tokenOwner, componentAddress, itemId, i);
-                if (response.data.length > 0) {
-                    _onComponentRendered(buffer1, buffer2, response);
+                if (componentAddress != address(0)) {
+                    response = _renderComponent(tokenOwner, componentAddress, itemId, i);
+
+                    if (response.data.length > 0) {
+                        _onComponentRendered(buffer1, buffer2, response);
+                    }
                 }
             }
         }
@@ -301,25 +300,19 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     function _renderComponent(address tokenOwner, address componentAddress, uint256 itemId, uint256 slotId)
         private
         view
-        returns (ComponentRenderResponse memory)
+        returns (ComponentRenderResponse memory response)
     {
-        ComponentRenderResponse memory response;
+        // Try-catch block: having no check on setting components could revert when `itemId` is invalid
+        try IERC721A(componentAddress).ownerOf(itemId) returns (address itemOwner) {
+            if (tokenOwner == itemOwner) {
+                ComponentRenderRequest memory request = _onComponentRendering(itemId);
+                ComponentRenderResponse memory _response = IERC721Component(componentAddress).renderExternally(request);
 
-        if (componentAddress != address(0)) {
-            // Try-catch block: having no check on setting components could revert when `itemId` is invalid
-            try IERC721A(componentAddress).ownerOf(itemId) returns (address itemOwner) {
-                if (tokenOwner == itemOwner) {
-                    ComponentRenderRequest memory request = _onComponentRendering(itemId);
-                    response = IERC721Component(componentAddress).renderExternally(request);
-
-                    if (slotId == response.slotId) {
-                        return response;
-                    }
+                if (slotId == response.slotId) {
+                    response = _response;
                 }
-            } catch { /* pass */ }
-        }
-
-        return response;
+            }
+        } catch { /* pass */ }
     }
 
     /*

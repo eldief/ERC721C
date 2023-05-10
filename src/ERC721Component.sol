@@ -24,7 +24,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     /// @notice Constructor
     /// @dev Initialize `ERC721A` with `name_` and `symbol_`
     ///      Initialize ownership via `Solady.Ownable`
-    constructor(string memory name_, string memory symbol_, address owner_) ERC721Common(name_, symbol_, owner_) {}
+    constructor(string memory name_, string memory symbol_) ERC721Common(name_, symbol_) {}
 
     /*
         ┬─┐┌─┐┌┐┌┌┬┐┌─┐┬─┐┬┌┐┌┌─┐
@@ -53,8 +53,8 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
 
         DynamicBufferLib.DynamicBuffer memory tokenURIBuffer;
         tokenURIBuffer.append("data:application/json,{");
-        tokenURIBuffer.append('"name":"', bytes(name()), " #", bytes(tokenId.toString()), '",');
-        tokenURIBuffer.append('"description":"', "", '",');
+        tokenURIBuffer.append('"name":"', bytes(name()), '",');
+        tokenURIBuffer.append('"description":"', bytes(description()), '",');
         tokenURIBuffer.append('"image":"data:image/svg+xml;base64,', bytes(buffer1.data.encode()), '",');
         tokenURIBuffer.append('"attributes":[', buffer2.data, "]}");
 
@@ -114,7 +114,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
 
     /// @notice On rendered hook for external calls
     /// @dev Executed after rendering externally
-    ///      Has to be overridden with custom behaviour for serializing `ComponentRenderResponse` and reading from buffers
+    ///      Has to be overridden with custom behaviour for serializing `ComponentRenderResponse`
     /// @param buffer1 DynamicBufferLib.DynamicBuffer Buffer
     /// @param buffer2 DynamicBufferLib.DynamicBuffer Buffer
     /// @return response ComponentRenderResponse Component render response

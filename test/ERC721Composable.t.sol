@@ -13,8 +13,8 @@ contract ERC721ComposableTest is Test {
     ERC721ComposableMock public composable;
 
     function setUp() public {
-        owner = msg.sender;
-        composable = new ERC721ComposableMock(msg.sender);
+        owner = address(this);
+        composable = new ERC721ComposableMock();
     }
 
     function test_Mint() public {
@@ -145,6 +145,11 @@ contract ERC721ComposableTest is Test {
         (componentId, itemId) = composable.__getComponentSlot7(1);
         assertEq(componentId, 80);
         assertEq(itemId, 80);
+
+        // expect revert on not-owned token
+        vm.prank(address(0));
+        vm.expectRevert(Ownable.Unauthorized.selector);
+        composable.__setComponentSlot1(1, 20, 20);
     }
 
     function test_SetComponentAddress() public {
@@ -157,5 +162,23 @@ contract ERC721ComposableTest is Test {
         // expect value set correctly
         address componentAddress = composable.__getComponentAddress(1);
         assertEq(componentAddress, address(69_420));
+
+        // expect revert not-owner
+        vm.prank(address(0));
+        vm.expectRevert(Ownable.Unauthorized.selector);
+        composable.__setComponentAddress(1, address(69_420));
+    }
+
+    function test_TokenURI() public {
+        // mint
+        composable.__mint(address(this), 1);
+
+        // expect tokenURI not empty
+        string memory tokenURI = composable.tokenURI(1);
+        assertTrue(bytes(tokenURI).length > 0);
+
+        // expect revert on non-existing token
+        vm.expectRevert(ERC721Common.InvalidTokenId.selector);
+        composable.tokenURI(2);
     }
 }

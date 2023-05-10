@@ -5,7 +5,7 @@ import "../../src/ERC721Composable.sol";
 
 // `__functions` are mock wrappers to internal functions
 contract ERC721ComposableMock is ERC721Composable {
-    constructor(address owner_) ERC721Composable("ERC721Composable", "ERC721C", owner_) {}
+    constructor() ERC721Composable("ERC721Composable", "ERC721C") {}
 
     // hooks
     function _onRendering(uint256 itemId) internal view override returns (ComponentRenderRequest memory request) {}

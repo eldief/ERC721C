@@ -45,6 +45,9 @@ abstract contract ERC721Common is IERC721Common, ERC721A, Ownable {
         ┌─┐┌┬┐┌─┐┬─┐┌─┐┌─┐┌─┐
         └─┐ │ │ │├┬┘├─┤│ ┬├┤ 
         └─┘ ┴ └─┘┴└─┴ ┴└─┘└─┘   */
+    /// @notice ERC721 Description
+    string private _description;
+
     /// @notice Contract configuration
     /// @dev Packed `Contract Configuration` to be customized by implementations
     ///      Layout:
@@ -65,8 +68,8 @@ abstract contract ERC721Common is IERC721Common, ERC721A, Ownable {
     /// @notice Constructor
     /// @dev Initialize `ERC721A` with `name_` and `symbol_`
     ///      Initialize ownership via `Solady.Ownable`
-    constructor(string memory name_, string memory symbol_, address owner_) ERC721A(name_, symbol_) {
-        _initializeOwner(owner_);
+    constructor(string memory name_, string memory symbol_) ERC721A(name_, symbol_) {
+        _initializeOwner(msg.sender);
     }
 
     /*
@@ -90,6 +93,24 @@ abstract contract ERC721Common is IERC721Common, ERC721A, Ownable {
             revert Unauthorized();
         }
         _;
+    }
+
+    /*
+        ┌─┐┌─┐┌┬┐┌┬┐┌─┐┬─┐┌─┐
+        │ ┬├┤  │  │ ├┤ ├┬┘└─┐
+        └─┘└─┘ ┴  ┴ └─┘┴└─└─┘   */
+    function description() public view virtual returns (string memory) {
+        return _description;
+    }
+
+    /*
+        ┌─┐┌─┐┌┬┐┌┬┐┌─┐┬─┐┌─┐
+        └─┐├┤  │  │ ├┤ ├┬┘└─┐
+        └─┘└─┘ ┴  ┴ └─┘┴└─└─┘   */
+    /// @notice Set Token description
+    /// @dev
+    function setDescription(string memory description_) public onlyOwner {
+        _description = description_;
     }
 
     /*
