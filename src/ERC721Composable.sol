@@ -40,6 +40,13 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     using DynamicBufferLib for DynamicBufferLib.DynamicBuffer;
 
     /*
+        ┌─┐┬─┐┬─┐┌─┐┬─┐┌─┐
+        ├┤ ├┬┘├┬┘│ │├┬┘└─┐
+        └─┘┴└─┴└─└─┘┴└─└─┘  */
+    /// @notice `InvalidSlotId` error
+    error InvalidSlotId();
+
+    /*
         ┌─┐┬  ┬┌─┐┌┐┌┌┬┐┌─┐
         ├┤ └┐┌┘├┤ │││ │ └─┐
         └─┘ └┘ └─┘┘└┘ ┴ └─┘ */
@@ -80,34 +87,6 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     mapping(uint8 => uint256) internal _components;
 
     /*
-        ┌─┐┌─┐┌┐┌┌─┐┌┬┐   ┬┌┬┐┌┬┐┬ ┬┌┬┐┌─┐┌┐ ┬  ┌─┐┌─┐
-        │  │ ││││└─┐ │ ───││││││││ │ │ ├─┤├┴┐│  ├┤ └─┐
-        └─┘└─┘┘└┘└─┘ ┴    ┴┴ ┴┴ ┴└─┘ ┴ ┴ ┴└─┘┴─┘└─┘└─┘  */
-    /// @dev Packed configuration slot 0 offset
-    uint8 internal constant _COMPONENT_SLOT_0 = 64;
-
-    /// @dev Packed configuration slot 1 offset
-    uint8 internal constant _COMPONENT_SLOT_1 = 88;
-
-    /// @dev Packed configuration slot 2 offset
-    uint8 internal constant _COMPONENT_SLOT_2 = 112;
-
-    /// @dev Packed configuration slot 3 offset
-    uint8 internal constant _COMPONENT_SLOT_3 = 136;
-
-    /// @dev Packed configuration slot 4 offset
-    uint8 internal constant _COMPONENT_SLOT_4 = 160;
-
-    /// @dev Packed configuration slot 5 offset
-    uint8 internal constant _COMPONENT_SLOT_5 = 184;
-
-    /// @dev Packed configuration slot 6 offset
-    uint8 internal constant _COMPONENT_SLOT_6 = 208;
-
-    /// @dev Packed configuration slot 7 offset
-    uint8 internal constant _COMPONENT_SLOT_7 = 232;
-
-    /*
         ┌─┐┌─┐┌┐┌┌─┐┌┬┐┬─┐┬ ┬┌─┐┌┬┐┌─┐┬─┐
         │  │ ││││└─┐ │ ├┬┘│ ││   │ │ │├┬┘
         └─┘└─┘┘└┘└─┘ ┴ ┴└─└─┘└─┘ ┴ └─┘┴└─   */
@@ -124,10 +103,10 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @dev Each component data is packed in a single word, see `PackingLib`
     ///      See `existingToken` modifier for reverts
     /// @param tokenId uint256 Token ID
-    /// @param slot uint256 Slot number
+    /// @param slotId uint8 Slot ID
     /// @return componentId uint256 Unpacked `Component ID`
     /// @return itemId uint256 Unpacked `Item ID`
-    function _getComponent(uint256 tokenId, uint8 slot)
+    function _getComponent(uint256 tokenId, uint8 slotId)
         internal
         view
         existingToken(tokenId)
@@ -139,11 +118,13 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
             mstore(0x20, _configurations.slot)
             let configuration := sload(keccak256(0, 0x40))
 
-            // componentId = configuration.unpackUInt8(slot);
-            componentId := and(shr(slot, configuration), 0xFF)
+            // componentId = configuration.unpackUInt8(64 + slotId * 24);
+            let offset := add(64, mul(24, slotId))
+            componentId := and(shr(offset, configuration), 0xFF)
 
-            // itemId = configuration.unpackUInt16(slot + 8);
-            itemId := and(shr(add(slot, 8), configuration), 0xFFFF)
+            // itemId = configuration.unpackUInt16(72 + slotId * 24);
+            offset := add(8, offset)
+            itemId := and(shr(offset, configuration), 0xFFFF)
         }
     }
 
@@ -170,13 +151,16 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     ///      Emit `ERC4906.MetadataUpdate` event
     ///      Emit `ComponentSet` event
     /// @param tokenId uint256 Token ID
-    /// @param slot uint256 Slot offset
+    /// @param slotId uint256 Slot ID
     /// @param componentId uint8 Component ID
     /// @param itemId uint16 Item ID
-    function _setComponent(uint256 tokenId, uint8 slot, uint8 componentId, uint16 itemId)
+    function _setComponent(uint256 tokenId, uint8 slotId, uint8 componentId, uint16 itemId)
         internal
         tokenOwnerOnly(tokenId)
     {
+        if (slotId > 8) {
+            revert InvalidSlotId();
+        }
         assembly {
             // configuration = _configurations[tokenId]
             mstore(0, tokenId)
@@ -184,13 +168,15 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
             let slotHash := keccak256(0, 0x40)
             let configuration := sload(slotHash)
 
-            // configuration.packUInt8(slot, componentId);
-            configuration := and(configuration, not(shl(slot, 0xFF)))
-            configuration := or(configuration, shl(slot, componentId))
+            // configuration.packUInt8(64 + slotId * 24, componentId);
+            let offset := add(64, mul(24, slotId))
+            configuration := and(configuration, not(shl(offset, 0xFF)))
+            configuration := or(configuration, shl(offset, componentId))
 
-            // configuration.packUInt16(slot + 8, itemId);
-            configuration := and(configuration, not(shl(add(slot, 8), 0xFFFF)))
-            configuration := or(configuration, shl(add(slot, 8), itemId))
+            // configuration.packUInt16(72 + slotId * 24, itemId);
+            offset := add(8, offset)
+            configuration := and(configuration, not(shl(offset, 0xFFFF)))
+            configuration := or(configuration, shl(offset, itemId))
 
             // _tokenConfiguration[tokenId] = configuration;
             sstore(slotHash, configuration)
@@ -202,7 +188,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
             // emit ComponentSet(tokenId, slotId, componentId, itemId);
             mstore(0, componentId)
             mstore(0x20, itemId)
-            let slotId := div(sub(slot, 64), 24) // slotId = (slot - 64) / 24
+            
             log3(0, 0x40, _COMPONENT_SET_SIGNATURE, tokenId, slotId)
         }
     }

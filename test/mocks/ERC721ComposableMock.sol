@@ -49,67 +49,67 @@ contract ERC721ComposableMock is ERC721Composable {
     }
 
     function __setComponentSlot0(uint256 tokenId, uint8 componentId, uint16 itemId) external {
-        _setComponent(tokenId, _COMPONENT_SLOT_0, componentId, itemId);
+        _setComponent(tokenId, 0, componentId, itemId);
     }
 
     function __getComponentSlot0(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getComponent(tokenId, _COMPONENT_SLOT_0);
+        return _getComponent(tokenId, 0);
     }
 
     function __setComponentSlot1(uint256 tokenId, uint8 componentId, uint16 itemId) external {
-        _setComponent(tokenId, _COMPONENT_SLOT_1, componentId, itemId);
+        _setComponent(tokenId, 1, componentId, itemId);
     }
 
     function __getComponentSlot1(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getComponent(tokenId, _COMPONENT_SLOT_1);
+        return _getComponent(tokenId, 1);
     }
 
     function __setComponentSlot2(uint256 tokenId, uint8 componentId, uint16 itemId) external {
-        _setComponent(tokenId, _COMPONENT_SLOT_2, componentId, itemId);
+        _setComponent(tokenId, 2, componentId, itemId);
     }
 
     function __getComponentSlot2(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getComponent(tokenId, _COMPONENT_SLOT_2);
+        return _getComponent(tokenId, 2);
     }
 
     function __setComponentSlot3(uint256 tokenId, uint8 componentId, uint16 itemId) external {
-        _setComponent(tokenId, _COMPONENT_SLOT_3, componentId, itemId);
+        _setComponent(tokenId, 3, componentId, itemId);
     }
 
     function __getComponentSlot3(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getComponent(tokenId, _COMPONENT_SLOT_3);
+        return _getComponent(tokenId, 3);
     }
 
     function __setComponentSlot4(uint256 tokenId, uint8 componentId, uint16 itemId) external {
-        _setComponent(tokenId, _COMPONENT_SLOT_4, componentId, itemId);
+        _setComponent(tokenId, 4, componentId, itemId);
     }
 
     function __getComponentSlot4(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getComponent(tokenId, _COMPONENT_SLOT_4);
+        return _getComponent(tokenId, 4);
     }
 
     function __setComponentSlot5(uint256 tokenId, uint8 componentId, uint16 itemId) external {
-        _setComponent(tokenId, _COMPONENT_SLOT_5, componentId, itemId);
+        _setComponent(tokenId, 5, componentId, itemId);
     }
 
     function __getComponentSlot5(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getComponent(tokenId, _COMPONENT_SLOT_5);
+        return _getComponent(tokenId, 5);
     }
 
     function __setComponentSlot6(uint256 tokenId, uint8 componentId, uint16 itemId) external {
-        _setComponent(tokenId, _COMPONENT_SLOT_6, componentId, itemId);
+        _setComponent(tokenId, 6, componentId, itemId);
     }
 
     function __getComponentSlot6(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getComponent(tokenId, _COMPONENT_SLOT_6);
+        return _getComponent(tokenId, 6);
     }
 
     function __setComponentSlot7(uint256 tokenId, uint8 componentId, uint16 itemId) external {
-        _setComponent(tokenId, _COMPONENT_SLOT_7, componentId, itemId);
+        _setComponent(tokenId, 7, componentId, itemId);
     }
 
     function __getComponentSlot7(uint256 tokenId) external view returns (uint256, uint256) {
-        return _getComponent(tokenId, _COMPONENT_SLOT_7);
+        return _getComponent(tokenId, 7);
     }
 
     function __setComponentAddress(uint8 componentId, address componentAddress) external {
