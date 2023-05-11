@@ -143,6 +143,10 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
         }
     }
 
+    /*
+        ┌─┐┌─┐┌┬┐┌┬┐┌─┐┬─┐┌─┐
+        └─┐├┤  │  │ ├┤ ├┬┘└─┐
+        └─┘└─┘ ┴  ┴ └─┘┴└─└─┘   */
     /// @notice Set component data
     /// @dev Each component data is packed in a single word, see `PackingLib`
     ///      Delegates verification gas usage to `tokenURI` view function
