@@ -106,17 +106,18 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @param slotId uint8 Slot ID
     /// @return componentId uint256 Unpacked `Component ID`
     /// @return itemId uint256 Unpacked `Item ID`
-    function _getComponent(uint256 tokenId, uint8 slotId)
-        internal
+    function getComponent(uint256 tokenId, uint8 slotId)
+        public
         view
         existingToken(tokenId)
         returns (uint256 componentId, uint256 itemId)
     {
         assembly {
-            // configuration = _configurations[tokenId];
+            // configuration = _configurations[tokenId]
             mstore(0, tokenId)
             mstore(0x20, _configurations.slot)
-            let configuration := sload(keccak256(0, 0x40))
+            let slotHash := keccak256(0, 0x40)
+            let configuration := sload(slotHash)
 
             // componentId = configuration.unpackUInt8(64 + slotId * 24);
             let offset := add(64, mul(24, slotId))
@@ -132,7 +133,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @dev Each component data is packed in a single word, see `PackingLib`
     /// @param componentId uint256 Component ID
     /// @return componentAddress address Unpacked `Component Address`
-    function _getComponentAddress(uint256 componentId) internal view returns (address componentAddress) {
+    function getComponentAddress(uint256 componentId) public view returns (address componentAddress) {
         assembly {
             // component = _components[componentId];
             mstore(0, componentId)
@@ -158,11 +159,11 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @param slotId uint256 Slot ID
     /// @param componentId uint8 Component ID
     /// @param itemId uint16 Item ID
-    function _setComponent(uint256 tokenId, uint8 slotId, uint8 componentId, uint16 itemId)
-        internal
+    function setComponent(uint256 tokenId, uint8 slotId, uint8 componentId, uint16 itemId)
+        public
         tokenOwnerOnly(tokenId)
     {
-        if (slotId > 8) {
+        if (slotId > 7) {
             revert InvalidSlotId();
         }
         assembly {
@@ -192,7 +193,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
             // emit ComponentSet(tokenId, slotId, componentId, itemId);
             mstore(0, componentId)
             mstore(0x20, itemId)
-            
+
             log3(0, 0x40, _COMPONENT_SET_SIGNATURE, tokenId, slotId)
         }
     }
@@ -202,7 +203,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     ///      See `Solady.Ownable.onlyOwner` modifier for reverts
     /// @param componentId uint8 Component ID
     /// @param componentAddress address Component address
-    function _setComponentAddress(uint8 componentId, address componentAddress) internal onlyOwner {
+    function setComponentAddress(uint8 componentId, address componentAddress) public onlyOwner {
         assembly {
             // component = _components[componentId];
             mstore(0, componentId)
@@ -287,7 +288,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
                 }
 
                 address tokenOwner = ownerOf(tokenId);
-                address componentAddress = _getComponentAddress(componentId);
+                address componentAddress = getComponentAddress(componentId);
 
                 if (componentAddress != address(0)) {
                     response = _renderComponent(tokenOwner, componentAddress, itemId, i);
