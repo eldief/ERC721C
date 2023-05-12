@@ -252,22 +252,24 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
         _onRender(image, animation, attributes, request);
         _onRendered(image, animation, attributes);
 
-        DynamicBufferLib.DynamicBuffer memory tokenURIBuffer = DynamicBufferLib.DynamicBuffer("data:application/json,{");
-        tokenURIBuffer.append('"name":"', bytes(name()));
+        DynamicBufferLib.DynamicBuffer memory jsonBuffer = DynamicBufferLib.DynamicBuffer("{");
+        jsonBuffer.append('"name":"', bytes(name()), '"');
 
         if (bytes(description()).length > 0) {
-            tokenURIBuffer.append(',"description":"', bytes(description()));
+            jsonBuffer.append(',"description":"', bytes(description()), '"');
         }
         if (image.data.length > 0) {
-            tokenURIBuffer.append(',"image":"data:image/svg+xml;base64,', bytes(image.data.encode()), '"');
+            jsonBuffer.append(',"image":"data:image/svg+xml;base64,', bytes(image.data.encode()), '"');
         }
         if (animation.data.length > 0) {
-            tokenURIBuffer.append(',"animation_url":"', animation.data, '"');
+            jsonBuffer.append(',"animation_url":"', animation.data, '"');
         }
         if (attributes.data.length > 0) {
-            tokenURIBuffer.append(',"attributes":[', attributes.data, "]");
+            jsonBuffer.append(',"attributes":[', attributes.data, "]");
         }
-        return string(abi.encodePacked("data:application/json;base64,", tokenURIBuffer.data.encode(), "}"));
+        jsonBuffer.append("}");
+        
+        return string(abi.encodePacked("data:application/json;base64,", jsonBuffer.data.encode()));
     }
 
     /// @notice Render all `ERC721Components`
@@ -329,11 +331,12 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
         try IERC721A(componentAddress).ownerOf(itemId) returns (address itemOwner) {
             if (tokenOwner == itemOwner) {
                 ComponentRenderRequest memory request = _onComponentRendering(itemId);
-                ComponentRenderResponse memory _response = IERC721Component(componentAddress).renderExternally(request);
-
-                if (slotId == response.slotId) {
-                    response = _response;
+                try IERC721Component(componentAddress).renderExternally(request) returns (ComponentRenderResponse memory _response) {
+                    if (slotId == response.slotId) {
+                        response = _response;
+                    }
                 }
+                catch { /* pass */ }
             }
         } catch { /* pass */ }
     }

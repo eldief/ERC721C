@@ -53,22 +53,24 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
         _onRender(image, animation, attributes, request);
         _onRenderedInternal(image, animation, attributes);
 
-        DynamicBufferLib.DynamicBuffer memory tokenURIBuffer = DynamicBufferLib.DynamicBuffer("data:application/json,{");
-        tokenURIBuffer.append('"name":"', bytes(name()));
+        DynamicBufferLib.DynamicBuffer memory jsonBuffer = DynamicBufferLib.DynamicBuffer("{");
+        jsonBuffer.append('"name":"', bytes(name()), '"');
 
         if (bytes(description()).length > 0) {
-            tokenURIBuffer.append(',"description":"', bytes(description()));
+            jsonBuffer.append(',"description":"', bytes(description()), '"');
         }
         if (image.data.length > 0) {
-            tokenURIBuffer.append(',"image":"data:image/svg+xml;base64,', bytes(image.data.encode()), '"');
+            jsonBuffer.append(',"image":"data:image/svg+xml;base64,', bytes(image.data.encode()), '"');
         }
         if (animation.data.length > 0) {
-            tokenURIBuffer.append(',"animation_url":"', animation.data, '"');
+            jsonBuffer.append(',"animation_url":"', animation.data, '"');
         }
         if (attributes.data.length > 0) {
-            tokenURIBuffer.append(',"attributes":[', attributes.data, "]");
+            jsonBuffer.append(',"attributes":[', attributes.data, "]");
         }
-        return string(abi.encodePacked("data:application/json;base64,", tokenURIBuffer.data.encode(), "}"));
+        jsonBuffer.append("}");
+
+        return string(abi.encodePacked("data:application/json;base64,", jsonBuffer.data.encode()));
     }
 
     /// @notice Component render function
