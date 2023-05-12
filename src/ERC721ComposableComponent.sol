@@ -246,9 +246,9 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
 
         _renderComponents(image, animation, attributes, tokenId, _configurations[tokenId]);
 
-        ComponentRenderRequest memory request = _onRendering(tokenId);
-        _onRender(image, animation, attributes, request);
-        _onRenderedInternal(image, animation, attributes);
+        ComponentRenderRequest memory request = _beforeRender(tokenId);
+        (image, animation, attributes, request);
+        _afterRenderInternal(image, animation, attributes);
 
         DynamicBufferLib.DynamicBuffer memory json;
         json.append('{"name":"', bytes(name()), '"');
@@ -272,7 +272,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
 
     /// @notice Render all `ERC721Components`
     /// @dev Buffers are passed by reference to save gas while appending data
-    ///      Uses `_onComponentRendered` hook to deserialize `ComponentRenderResponse`
+    ///      Uses `_afterComponentRender` hook to deserialize `ComponentRenderResponse`
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
@@ -304,7 +304,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
                     response = _renderComponent(tokenOwner, componentAddress, itemId, i);
 
                     if (response.data.length > 0) {
-                        _onComponentRendered(image, animation, attributes, response);
+                        _afterComponentRender(image, animation, attributes, response);
                     }
                 }
             }
@@ -314,7 +314,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @notice Render `ERC721Component`
     /// @dev Gas for checking component validity and ownership is delegated to view functions, e.g. `ERC721.tokenURI`.
     ///      This save gas on `ERC721.transferFrom`, `ERC721.safeFransferFrom` and `ERC721Composable.setComponent`.
-    ///      Uses `_onComponentRendering` hook to serialize `ComponentRenderRequest`
+    ///      Uses `_beforeComponentRender` hook to serialize `ComponentRenderRequest`
     /// @param tokenOwner address ERC721 owner of `tokenId`
     /// @param componentAddress address Component address
     /// @param itemId uint256 Component item ID
@@ -328,7 +328,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
         // Try-catch block: having no check on setting components could revert when `itemId` is invalid
         try IERC721A(componentAddress).ownerOf(itemId) returns (address itemOwner) {
             if (tokenOwner == itemOwner) {
-                ComponentRenderRequest memory request = _onComponentRendering(itemId);
+                ComponentRenderRequest memory request = _beforeComponentRender(itemId);
                 ComponentRenderResponse memory _response = IERC721Component(componentAddress).renderExternally(request);
 
                 if (slotId == response.slotId) {
@@ -355,7 +355,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
 
         _onRender(image, animation, attributes, request);
 
-        return _onRenderedExternal(image, animation, attributes);
+        return _afterRenderExternal(image, animation, attributes);
     }
 
     /*
@@ -367,7 +367,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     ///      Has to be overridden with custom behaviour for serializing `ComponentRenderRequest`
     /// @param itemId uint256 Componet item ID
     /// @return request ComponentRenderRequest Component render request
-    function _onRendering(uint256 itemId) internal view virtual returns (ComponentRenderRequest memory request);
+    function _beforeRender(uint256 itemId) internal view virtual returns (ComponentRenderRequest memory request);
 
     /// @notice On render hook
     /// @dev Executed while rendering
@@ -389,7 +389,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
-    function _onRenderedInternal(
+    function _afterRenderInternal(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes
@@ -402,7 +402,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
     /// @return response ComponentRenderResponse Component render response
-    function _onRenderedExternal(
+    function _afterRenderExternal(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes
@@ -413,7 +413,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     ///      Has to be overridden with custom behaviour for serializing `ComponentRenderRequest`
     /// @param itemId uint256 Componet item ID
     /// @return request ComponentRenderRequest Component render request
-    function _onComponentRendering(uint256 itemId)
+    function _beforeComponentRender(uint256 itemId)
         internal
         view
         virtual
@@ -426,7 +426,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
     /// @param response ComponentRenderResponse Component render response
-    function _onComponentRendered(
+    function _afterComponentRender(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes,

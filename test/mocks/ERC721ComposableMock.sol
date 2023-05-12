@@ -8,7 +8,7 @@ contract ERC721ComposableMock is ERC721Composable {
     constructor() ERC721Composable("ERC721Composable", "ERC721C") {}
 
     // hooks
-    function _onRendering(uint256 itemId) internal view override returns (ComponentRenderRequest memory request) {}
+    function _beforeRender(uint256 itemId) internal view override returns (ComponentRenderRequest memory request) {}
 
     function _onRender(
         DynamicBufferLib.DynamicBuffer memory image,
@@ -17,20 +17,20 @@ contract ERC721ComposableMock is ERC721Composable {
         ComponentRenderRequest memory request
     ) internal view override {}
 
-    function _onRendered(
+    function _afterRender(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes
     ) internal view override {}
 
-    function _onComponentRendering(uint256 itemId)
+    function _beforeComponentRender(uint256 itemId)
         internal
         view
         override
         returns (ComponentRenderRequest memory request)
     {}
 
-    function _onComponentRendered(
+    function _afterComponentRender(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes,

@@ -44,26 +44,26 @@ A library to manage "Custom Data" with basic types is also provided: [`PackingLi
 Each base contract expose many hooks that can be customized to provide rendering functionalities:
 
 `ERC721Composable`:
-- _onRendering -> Executed before rendering
+- _beforeRender -> Executed before rendering
 - _onRender -> Executed while rendering
-- _onRendered -> Executed after rendering
-- _onComponentRendering -> Executed before rendering a component
-- _onComponentRendered -> Executed after rendering a component
+- _afterRender -> Executed after rendering
+- _beforeComponentRender -> Executed before rendering a component
+- _afterComponentRender -> Executed after rendering a component
 
 
 `ERC721Component`:
-- _onRendering -> Executed before rendering
+- _beforeRender -> Executed before rendering
 - _onRender -> Executed while rendering
-- _onRenderedInternal -> Executed after rendering internally
-- _onRenderedExternal -> Executed after rendering externally
+- _afterRenderInternal -> Executed after rendering internally
+- _afterRenderExternal -> Executed after rendering externally
 
 `ERC721ComposableComponent`:
-- _onRendering -> Executed before rendering
+- _beforeRender -> Executed before rendering
 - _onRender -> Executed while rendering
-- _onRenderedInternal -> Executed after rendering internally
-- _onRenderedExternal -> Executed after rendering externally
-- _onComponentRendering -> Executed before rendering a component
-- _onComponentRendered -> Executed after rendering a component
+- _afterRenderInternal -> Executed after rendering internally
+- _afterRenderExternal -> Executed after rendering externally
+- _beforeComponentRender -> Executed before rendering a component
+- _afterComponentRender -> Executed after rendering a component
 
 # Working with ERC721C
 WIP...

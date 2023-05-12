@@ -49,9 +49,9 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
         DynamicBufferLib.DynamicBuffer memory animation;
         DynamicBufferLib.DynamicBuffer memory attributes;
 
-        ComponentRenderRequest memory request = _onRendering(tokenId);
+        ComponentRenderRequest memory request = _beforeRender(tokenId);
         _onRender(image, animation, attributes, request);
-        _onRenderedInternal(image, animation, attributes);
+        _afterRenderInternal(image, animation, attributes);
 
         DynamicBufferLib.DynamicBuffer memory json;
         json.append('{"name":"', bytes(name()), '"');
@@ -90,7 +90,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
 
         _onRender(image, animation, attributes, request);
 
-        return _onRenderedExternal(image, animation, attributes);
+        return _afterRenderExternal(image, animation, attributes);
     }
 
     /*
@@ -102,7 +102,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     ///      Has to be overridden with custom behaviour for serializing `ComponentRenderRequest`
     /// @param itemId uint256 Componet item ID
     /// @return request ComponentRenderRequest Component render request
-    function _onRendering(uint256 itemId) internal view virtual returns (ComponentRenderRequest memory request);
+    function _beforeRender(uint256 itemId) internal view virtual returns (ComponentRenderRequest memory request);
 
     /// @notice On render hook
     /// @dev Executed while rendering
@@ -124,7 +124,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
-    function _onRenderedInternal(
+    function _afterRenderInternal(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes
@@ -137,7 +137,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
     /// @return response ComponentRenderResponse Component render response
-    function _onRenderedExternal(
+    function _afterRenderExternal(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes
