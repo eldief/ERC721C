@@ -36,7 +36,6 @@ import "./common/ERC721Common.sol";
 ///        - [240..255] `Slot 7 item id`
 abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     using Base64 for bytes;
-    using LibString for uint256;
     using DynamicBufferLib for DynamicBufferLib.DynamicBuffer;
 
     /*
@@ -243,35 +242,46 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
         existingToken(tokenId)
         returns (string memory)
     {
-        DynamicBufferLib.DynamicBuffer memory buffer1;
-        DynamicBufferLib.DynamicBuffer memory buffer2;
+        DynamicBufferLib.DynamicBuffer memory image;
+        DynamicBufferLib.DynamicBuffer memory animation;
+        DynamicBufferLib.DynamicBuffer memory attributes;
 
-        _renderComponents(buffer1, buffer2, tokenId, _configurations[tokenId]);
+        _renderComponents(image, animation, attributes, tokenId, _configurations[tokenId]);
 
         ComponentRenderRequest memory request = _onRendering(tokenId);
-        _onRender(buffer1, buffer2, request);
-        _onRendered(buffer1, buffer2);
+        _onRender(image, animation, attributes, request);
+        _onRendered(image, animation, attributes);
 
-        DynamicBufferLib.DynamicBuffer memory tokenURIBuffer;
-        tokenURIBuffer.append("data:application/json,{");
-        tokenURIBuffer.append('"name":"', bytes(name()), '",');
-        tokenURIBuffer.append('"description":"', bytes(description()), '",');
-        tokenURIBuffer.append('"image":"data:image/svg+xml;base64,', bytes(buffer1.data.encode()), '",');
-        tokenURIBuffer.append('"attributes":[', buffer2.data, "]}");
+        DynamicBufferLib.DynamicBuffer memory tokenURIBuffer = DynamicBufferLib.DynamicBuffer("data:application/json,{");
+        tokenURIBuffer.append('"name":"', bytes(name()));
 
-        return string(abi.encodePacked("data:application/json;base64,", tokenURIBuffer.data.encode()));
+        if (bytes(description()).length > 0) {
+            tokenURIBuffer.append(',"description":"', bytes(description()));
+        }
+        if (image.data.length > 0) {
+            tokenURIBuffer.append(',"image":"data:image/svg+xml;base64,', bytes(image.data.encode()), '"');
+        }
+        if (animation.data.length > 0) {
+            tokenURIBuffer.append(',"animation_url":"', animation.data, '"');
+        }
+        if (attributes.data.length > 0) {
+            tokenURIBuffer.append(',"attributes":[', attributes.data, "]");
+        }
+        return string(abi.encodePacked("data:application/json;base64,", tokenURIBuffer.data.encode(), "}"));
     }
 
     /// @notice Render all `ERC721Components`
     /// @dev Buffers are passed by reference to save gas while appending data
     ///      Uses `_onComponentRendered` hook to deserialize `ComponentRenderResponse`
-    /// @param buffer1 DynamicBufferLib.DynamicBuffer Buffer
-    /// @param buffer2 DynamicBufferLib.DynamicBuffer Buffer
+    /// @param image DynamicBufferLib.DynamicBuffer Image buffer
+    /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
+    /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
     /// @param tokenId uint256 Token ID
     /// @param configuration uint256 Unpacked component configuration
     function _renderComponents(
-        DynamicBufferLib.DynamicBuffer memory buffer1,
-        DynamicBufferLib.DynamicBuffer memory buffer2,
+        DynamicBufferLib.DynamicBuffer memory image,
+        DynamicBufferLib.DynamicBuffer memory animation,
+        DynamicBufferLib.DynamicBuffer memory attributes,
         uint256 tokenId,
         uint256 configuration
     ) private view {
@@ -294,7 +304,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
                     response = _renderComponent(tokenOwner, componentAddress, itemId, i);
 
                     if (response.data.length > 0) {
-                        _onComponentRendered(buffer1, buffer2, response);
+                        _onComponentRendered(image, animation, attributes, response);
                     }
                 }
             }
@@ -342,24 +352,28 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @notice On render hook
     /// @dev Executed while rendering
     ///      Has to be overridden with custom behaviour for deserializing `ComponentRenderRequest` and writing to buffers
-    /// @param buffer1 DynamicBufferLib.DynamicBuffer Buffer
-    /// @param buffer2 DynamicBufferLib.DynamicBuffer Buffer
+    /// @param image DynamicBufferLib.DynamicBuffer Image buffer
+    /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
+    /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
     /// @param request ComponentRenderRequest Component render request
     function _onRender(
-        DynamicBufferLib.DynamicBuffer memory buffer1,
-        DynamicBufferLib.DynamicBuffer memory buffer2,
+        DynamicBufferLib.DynamicBuffer memory image,
+        DynamicBufferLib.DynamicBuffer memory animation,
+        DynamicBufferLib.DynamicBuffer memory attributes,
         ComponentRenderRequest memory request
     ) internal view virtual;
 
     /// @notice On rendered hook
     /// @dev Executed after rendering
     ///      Has to be overridden with custom behaviour writing to buffers
-    /// @param buffer1 DynamicBufferLib.DynamicBuffer Buffer
-    /// @param buffer2 DynamicBufferLib.DynamicBuffer Buffer
-    function _onRendered(DynamicBufferLib.DynamicBuffer memory buffer1, DynamicBufferLib.DynamicBuffer memory buffer2)
-        internal
-        view
-        virtual;
+    /// @param image DynamicBufferLib.DynamicBuffer Image buffer
+    /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
+    /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
+    function _onRendered(
+        DynamicBufferLib.DynamicBuffer memory image,
+        DynamicBufferLib.DynamicBuffer memory animation,
+        DynamicBufferLib.DynamicBuffer memory attributes
+    ) internal view virtual;
 
     /// @notice On component rendering hook
     /// @dev Executed before rendering a component
@@ -375,12 +389,14 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @notice On component rendered hook
     /// @dev Executed after rendering a component
     ///      Has to be overridden with custom behaviour for deserializing `ComponentRenderResponse` and writing to buffers
-    /// @param buffer1 DynamicBufferLib.DynamicBuffer Buffer
-    /// @param buffer2 DynamicBufferLib.DynamicBuffer Buffer
+    /// @param image DynamicBufferLib.DynamicBuffer Image buffer
+    /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
+    /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
     /// @param response ComponentRenderResponse Component render response
     function _onComponentRendered(
-        DynamicBufferLib.DynamicBuffer memory buffer1,
-        DynamicBufferLib.DynamicBuffer memory buffer2,
+        DynamicBufferLib.DynamicBuffer memory image,
+        DynamicBufferLib.DynamicBuffer memory animation,
+        DynamicBufferLib.DynamicBuffer memory attributes,
         ComponentRenderResponse memory response
     ) internal view virtual;
 }
