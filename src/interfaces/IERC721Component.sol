@@ -8,5 +8,5 @@ interface IERC721Component is IERC721Common {
     function renderExternally(ComponentRenderRequest calldata request)
         external
         view
-        returns (ComponentRenderResponse memory);
+        returns (ComponentRenderRequest memory);
 }

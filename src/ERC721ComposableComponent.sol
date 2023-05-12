@@ -244,10 +244,9 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
         DynamicBufferLib.DynamicBuffer memory animation;
         DynamicBufferLib.DynamicBuffer memory attributes;
 
-        _renderComponents(image, animation, attributes, tokenId, _configurations[tokenId]);
-
         ComponentRenderRequest memory request = _beforeRender(tokenId);
-        (image, animation, attributes, request);
+        _renderComponents(image, animation, attributes, request, _configurations[tokenId]);
+        _onRender(image, animation, attributes, request);
         _afterRenderInternal(image, animation, attributes);
 
         DynamicBufferLib.DynamicBuffer memory json;
@@ -266,7 +265,7 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
             json.append(',"attributes":[', attributes.data, "]");
         }
         json.append("}");
-
+        
         return string(abi.encodePacked("data:application/json;base64,", json.data.encode()));
     }
 
@@ -276,17 +275,15 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
-    /// @param tokenId uint256 Token ID
+    /// @param request ComponentRenderRequest Component render request
     /// @param configuration uint256 Unpacked component configuration
     function _renderComponents(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes,
-        uint256 tokenId,
+        ComponentRenderRequest memory request,
         uint256 configuration
     ) private view {
-        ComponentRenderResponse memory response;
-
         unchecked {
             for (uint256 i; i < 8; ++i) {
                 uint256 itemId;
@@ -297,14 +294,14 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
                     componentId := and(shr(add(64, mul(i, 24)), configuration), 0xFF)
                 }
 
-                address tokenOwner = ownerOf(tokenId);
+                address tokenOwner = ownerOf(request.tokenId);
                 address componentAddress = getComponentAddress(componentId);
 
                 if (componentAddress != address(0)) {
-                    response = _renderComponent(tokenOwner, componentAddress, itemId, i);
+                    _renderComponent(tokenOwner, componentAddress, itemId, i, request);
 
-                    if (response.data.length > 0) {
-                        _afterComponentRender(image, animation, attributes, response);
+                    if (request.data.length > 0) {
+                        _afterComponentRender(image, animation, attributes, request);
                     }
                 }
             }
@@ -318,22 +315,21 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @param tokenOwner address ERC721 owner of `tokenId`
     /// @param componentAddress address Component address
     /// @param itemId uint256 Component item ID
+    /// @param request ComponentRenderRequest Component render request
     /// @param slotId uint256 Component slot ID
-    /// @return response ComponentRenderResponse
-    function _renderComponent(address tokenOwner, address componentAddress, uint256 itemId, uint256 slotId)
+    function _renderComponent(address tokenOwner, address componentAddress, uint256 itemId, uint256 slotId, ComponentRenderRequest memory request)
         private
         view
-        returns (ComponentRenderResponse memory response)
     {
         // Try-catch block: having no check on setting components could revert when `itemId` is invalid
         try IERC721A(componentAddress).ownerOf(itemId) returns (address itemOwner) {
             if (tokenOwner == itemOwner) {
-                ComponentRenderRequest memory request = _beforeComponentRender(itemId);
-                ComponentRenderResponse memory _response = IERC721Component(componentAddress).renderExternally(request);
-
-                if (slotId == response.slotId) {
-                    response = _response;
-                }
+                _beforeComponentRender(itemId, request);
+                try IERC721Component(componentAddress).renderExternally(request) returns (ComponentRenderRequest memory _request) {
+                    if (slotId == _request.slotId) {
+                        request = _request;
+                    }
+                } catch { /* pass */ }
             }
         } catch { /* pass */ }
     }
@@ -342,20 +338,21 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
     /// @dev Entry point for `ERC721Composable._renderComponents`
     ///      Has to be overridden by Component Implementation
     /// @param request ComponentRenderRequest Component render request
-    /// @return response ComponentRenderResponse Component render response
+    /// @return response ComponentRenderRequest Modified component render request
     function renderExternally(ComponentRenderRequest memory request)
         external
         view
         existingToken(request.tokenId)
-        returns (ComponentRenderResponse memory)
+        returns (ComponentRenderRequest memory)
     {
         DynamicBufferLib.DynamicBuffer memory image;
         DynamicBufferLib.DynamicBuffer memory animation;
         DynamicBufferLib.DynamicBuffer memory attributes;
 
         _onRender(image, animation, attributes, request);
+        _afterRenderExternal(image, animation, attributes, request);
 
-        return _afterRenderExternal(image, animation, attributes);
+        return request;
     }
 
     /*
@@ -364,14 +361,12 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
         ┴ ┴└─┘└─┘┴ ┴└─┘ */
     /// @notice On rendering hook
     /// @dev Executed before rendering
-    ///      Has to be overridden with custom behaviour for serializing `ComponentRenderRequest`
-    /// @param itemId uint256 Componet item ID
+    /// @param itemId uint256 Component item ID
     /// @return request ComponentRenderRequest Component render request
     function _beforeRender(uint256 itemId) internal view virtual returns (ComponentRenderRequest memory request);
 
     /// @notice On render hook
     /// @dev Executed while rendering
-    ///      Has to be overridden with custom behaviour for deserializing `ComponentRenderRequest` and writing to buffers
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
@@ -395,41 +390,38 @@ abstract contract ERC721ComposableComponent is IERC721ComposableComponent, ERC72
         DynamicBufferLib.DynamicBuffer memory attributes
     ) internal view virtual;
 
-    /// @notice On rendered hook for external calls
     /// @dev Executed after rendering externally
     ///      Has to be overridden with custom behaviour for serializing `ComponentRenderResponse`
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
-    /// @return response ComponentRenderResponse Component render response
+    /// @param request ComponentRenderResponse Component render request
     function _afterRenderExternal(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
-        DynamicBufferLib.DynamicBuffer memory attributes
-    ) internal view virtual returns (ComponentRenderResponse memory response);
+        DynamicBufferLib.DynamicBuffer memory attributes,
+        ComponentRenderRequest memory request
+    ) internal view virtual;
 
     /// @notice On component rendering hook
     /// @dev Executed before rendering a component
-    ///      Has to be overridden with custom behaviour for serializing `ComponentRenderRequest`
-    /// @param itemId uint256 Componet item ID
-    /// @return request ComponentRenderRequest Component render request
-    function _beforeComponentRender(uint256 itemId)
+    /// @param itemId uint256 Component item ID
+    /// @param request ComponentRenderRequest Component render request
+    function _beforeComponentRender(uint256 itemId, ComponentRenderRequest memory request)
         internal
         view
-        virtual
-        returns (ComponentRenderRequest memory request);
+        virtual;
 
     /// @notice On component rendered hook
     /// @dev Executed after rendering a component
-    ///      Has to be overridden with custom behaviour for deserializing `ComponentRenderResponse` and writing to buffers
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
-    /// @param response ComponentRenderResponse Component render response
+    /// @param request ComponentRenderRequest Component render request
     function _afterComponentRender(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes,
-        ComponentRenderResponse memory response
+        ComponentRenderRequest memory request
     ) internal view virtual;
 }

@@ -77,20 +77,21 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     /// @dev Entry point for `ERC721Composable._renderComponents`
     ///      Has to be overridden by Component Implementation
     /// @param request ComponentRenderRequest Component render request
-    /// @return response ComponentRenderResponse Component render response
+    /// @return response ComponentRenderRequest Modified component render request
     function renderExternally(ComponentRenderRequest memory request)
         external
         view
         existingToken(request.tokenId)
-        returns (ComponentRenderResponse memory)
+        returns (ComponentRenderRequest memory)
     {
         DynamicBufferLib.DynamicBuffer memory image;
         DynamicBufferLib.DynamicBuffer memory animation;
         DynamicBufferLib.DynamicBuffer memory attributes;
 
         _onRender(image, animation, attributes, request);
+        _afterRenderExternal(image, animation, attributes, request);
 
-        return _afterRenderExternal(image, animation, attributes);
+        return request;
     }
 
     /*
@@ -136,10 +137,11 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
-    /// @return response ComponentRenderResponse Component render response
+    /// @param request ComponentRenderResponse Component render request
     function _afterRenderExternal(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
-        DynamicBufferLib.DynamicBuffer memory attributes
-    ) internal view virtual returns (ComponentRenderResponse memory response);
+        DynamicBufferLib.DynamicBuffer memory attributes,
+        ComponentRenderRequest memory request
+    ) internal view virtual;
 }
