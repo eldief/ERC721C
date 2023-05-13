@@ -51,7 +51,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
 
         ComponentRenderRequest memory request = _beforeRender(tokenId);
         _onRender(image, animation, attributes, request);
-        _afterRenderInternal(image, animation, attributes);
+        _afterRender(image, animation, attributes);
 
         DynamicBufferLib.DynamicBuffer memory json;
         json.append('{"name":"', bytes(name()), '"');
@@ -81,7 +81,7 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     function renderExternally(ComponentRenderRequest memory request)
         external
         view
-        existingToken(request.tokenId)
+        existingToken(request.itemId)
         returns (ComponentRenderRequest memory)
     {
         DynamicBufferLib.DynamicBuffer memory image;
@@ -89,7 +89,6 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
         DynamicBufferLib.DynamicBuffer memory attributes;
 
         _onRender(image, animation, attributes, request);
-        _afterRenderExternal(image, animation, attributes, request);
 
         return request;
     }
@@ -125,23 +124,9 @@ abstract contract ERC721Component is IERC721Component, ERC721Common {
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
-    function _afterRenderInternal(
+    function _afterRender(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes
-    ) internal view virtual;
-
-    /// @notice On rendered hook for external calls
-    /// @dev Executed after rendering externally
-    ///      Has to be overridden with custom behaviour for serializing `ComponentRenderResponse`
-    /// @param image DynamicBufferLib.DynamicBuffer Image buffer
-    /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
-    /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
-    /// @param request ComponentRenderResponse Component render request
-    function _afterRenderExternal(
-        DynamicBufferLib.DynamicBuffer memory image,
-        DynamicBufferLib.DynamicBuffer memory animation,
-        DynamicBufferLib.DynamicBuffer memory attributes,
-        ComponentRenderRequest memory request
     ) internal view virtual;
 }

@@ -6,7 +6,7 @@ import "@solady/utils/Base64.sol";
 import "@solady/utils/DynamicBufferLib.sol";
 
 struct ComponentRenderRequest {
-    uint256 tokenId;
+    uint256 itemId;
     uint256 slotId;
     bytes data;
 }

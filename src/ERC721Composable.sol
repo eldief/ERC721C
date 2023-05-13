@@ -247,7 +247,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
         DynamicBufferLib.DynamicBuffer memory attributes;
 
         ComponentRenderRequest memory request = _beforeRender(tokenId);
-        _renderComponents(image, animation, attributes, request, tokenId, _configurations[tokenId]);
+        _renderComponents(image, animation, attributes, request, tokenId);
         _onRender(image, animation, attributes, request);
         _afterRender(image, animation, attributes);
 
@@ -267,7 +267,7 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
             json.append(',"attributes":[', attributes.data, "]");
         }
         json.append("}");
-        
+
         return string(abi.encodePacked("data:application/json;base64,", json.data.encode()));
     }
 
@@ -278,35 +278,20 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
     /// @param request ComponentRenderRequest Component render request
-    /// @param configuration uint256 Unpacked component configuration
+    /// @param tokenId uint256 Token id
     function _renderComponents(
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes,
         ComponentRenderRequest memory request,
-        uint256 tokenId,
-        uint256 configuration
+        uint256 tokenId
     ) private view {
-        address tokenOwner = ownerOf(tokenId);
+        address owner = ownerOf(tokenId);
+        uint256 configuration = _configurations[tokenId];
 
         unchecked {
-            for (uint256 i; i < 8; ++i) {
-                uint256 itemId;
-                uint256 componentId;
-
-                assembly {
-                    itemId := and(shr(add(8, add(64, mul(i, 24))), configuration), 0xFFFF)
-                    componentId := and(shr(add(64, mul(i, 24)), configuration), 0xFF)
-                }
-
-                address componentAddress = getComponentAddress(componentId);
-                if (componentAddress != address(0)) {
-                    _renderComponent(tokenOwner, componentAddress, itemId, i, request);
-
-                    if (request.data.length > 0) {
-                        _afterComponentRender(image, animation, attributes, request);
-                    }
-                }
+            for (uint256 slotId; slotId < 8; ++slotId) {
+                _renderComponent(owner, slotId, configuration, request, image, animation, attributes);
             }
         }
     }
@@ -315,26 +300,51 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
     /// @dev Gas for checking component validity and ownership is delegated to view functions, e.g. `ERC721.tokenURI`.
     ///      This save gas on `ERC721.transferFrom`, `ERC721.safeFransferFrom` and `ERC721Composable.setComponent`.
     ///      Uses `_beforeComponentRender` hook to serialize `ComponentRenderRequest`
-    /// @param tokenOwner address ERC721 owner of `tokenId`
-    /// @param componentAddress address Component address
-    /// @param itemId uint256 Component item ID
+    /// @param owner address ERC721 owner of `tokenId`
+    /// @param slotId uint256 Slot id
+    /// @param configuration uint256 Packed token configuration
     /// @param request ComponentRenderRequest Component render request
-    /// @param slotId uint256 Component slot ID
-    function _renderComponent(address tokenOwner, address componentAddress, uint256 itemId, uint256 slotId, ComponentRenderRequest memory request)
-        private
-        view
-    {
-        // Try-catch block: having no check on setting components could revert when `itemId` is invalid
-        try IERC721A(componentAddress).ownerOf(itemId) returns (address itemOwner) {
-            if (tokenOwner == itemOwner) {
-                _beforeComponentRender(itemId, request);
-                try IERC721Component(componentAddress).renderExternally(request) returns (ComponentRenderRequest memory _request) {
-                    if (slotId == _request.slotId) {
-                        request = _request;
-                    }
-                } catch { /* pass */ }
-            }
-        } catch { /* pass */ }
+    /// @param image DynamicBufferLib.DynamicBuffer Image buffer
+    /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
+    /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
+    function _renderComponent(
+        address owner,
+        uint256 slotId,
+        uint256 configuration,
+        ComponentRenderRequest memory request,
+        DynamicBufferLib.DynamicBuffer memory image,
+        DynamicBufferLib.DynamicBuffer memory animation,
+        DynamicBufferLib.DynamicBuffer memory attributes
+    ) private view {
+        bool success;
+        uint256 itemId;
+        uint256 componentId;
+        assembly {
+            itemId := and(shr(add(8, add(64, mul(slotId, 24))), configuration), 0xFFFF)
+            componentId := and(shr(add(64, mul(slotId, 24)), configuration), 0xFF)
+        }
+
+        address componentAddress = getComponentAddress(componentId);
+
+        if (componentAddress != address(0)) {
+            _beforeComponentRender(slotId, componentId, request);
+
+            // Try-catch block: having no check on setting components could revert when `itemId` is invalid
+            try IERC721A(componentAddress).ownerOf(request.itemId) returns (address itemOwner) {
+                if (owner == itemOwner) {
+                    try IERC721Component(componentAddress).renderExternally(request) returns (
+                        ComponentRenderRequest memory _request
+                    ) {
+                        if (request.slotId == _request.slotId) {
+                            request = _request;
+                            success = true;
+                        }
+                    } catch { /* pass */ }
+                }
+            } catch { /* pass */ }
+        }
+
+        _afterComponentRender(success, image, animation, attributes, request);
     }
 
     /*
@@ -373,20 +383,23 @@ abstract contract ERC721Composable is IERC721Composable, ERC721Common {
 
     /// @notice On component rendering hook
     /// @dev Executed before rendering a component
+    /// @param slotId uint256 Slot ID
     /// @param itemId uint256 Component item ID
     /// @param request ComponentRenderRequest Component render request
-    function _beforeComponentRender(uint256 itemId, ComponentRenderRequest memory request)
+    function _beforeComponentRender(uint256 slotId, uint256 itemId, ComponentRenderRequest memory request)
         internal
         view
         virtual;
 
     /// @notice On component rendered hook
     /// @dev Executed after rendering a component
+    /// @param success bool Has component been rendered successfully
     /// @param image DynamicBufferLib.DynamicBuffer Image buffer
     /// @param animation DynamicBufferLib.DynamicBuffer Animation buffer
     /// @param attributes DynamicBufferLib.DynamicBuffer Attributes buffer
     /// @param request ComponentRenderRequest Component render request
     function _afterComponentRender(
+        bool success,
         DynamicBufferLib.DynamicBuffer memory image,
         DynamicBufferLib.DynamicBuffer memory animation,
         DynamicBufferLib.DynamicBuffer memory attributes,

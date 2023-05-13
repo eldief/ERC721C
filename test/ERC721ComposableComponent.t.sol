@@ -184,15 +184,16 @@ contract ERC721ComposableComponentTest is Test {
         // mint
         composableComponent.__mint(address(this), 1);
 
-        // expect tokenURI to not revert, hooks are not setup, so response should be empty
-        ComponentRenderRequest memory request = ComponentRenderRequest(1, new bytes(0));
-        ComponentRenderResponse memory response = composableComponent.renderExternally(request);
-        assertEq(response.slotId, 0);
-        assertEq(response.data.length, 0);
+        // expect tokenURI to not revert, hooks are not setup, so response should be the same as request
+        ComponentRenderRequest memory request = ComponentRenderRequest(1, 1, new bytes(0));
+        request = composableComponent.renderExternally(request);
+        assertEq(request.itemId, 1);
+        assertEq(request.slotId, 1);
+        assertEq(request.data.length, 0);
 
         // expect revert on non-existing token
         vm.expectRevert(ERC721Common.InvalidTokenId.selector);
-        request = ComponentRenderRequest(2, new bytes(0));
+        request = ComponentRenderRequest(2, 1, new bytes(0));
         composableComponent.renderExternally(request);
     }
 }
